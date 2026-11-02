@@ -15,6 +15,26 @@ if [[ -z "${DOCROOT:-}" ]]; then
   exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# SAFETY GUARDS — protect other projects sharing this hosting account.
+# The publish step syncs files INTO $DOCROOT and may remove stale files there,
+# so we refuse any target that isn't unmistakably this project's own folder.
+# ---------------------------------------------------------------------------
+DOCROOT="${DOCROOT%/}"                 # strip trailing slash
+case "$DOCROOT" in
+  "" | "/" | "/home" | "$HOME" | "$HOME/public_html")
+    echo "REFUSING: '$DOCROOT' is a shared/home directory. Aborting to protect other sites."
+    exit 1 ;;
+esac
+if [[ "$DOCROOT" != *caloriecounterbketo* && "${ALLOW_ANY_DOCROOT:-0}" != "1" ]]; then
+  echo "SAFETY STOP: the target folder does not look like this project's subdomain."
+  echo "  Expected the path to contain 'caloriecounterbketo'."
+  echo "  Got: $DOCROOT"
+  echo "Nothing was changed. Fix DOCROOT, or (only if you are certain) re-run with ALLOW_ANY_DOCROOT=1."
+  exit 1
+fi
+echo "==> Target folder OK: $DOCROOT"
+
 echo "==> Installing dependencies"
 npm ci
 
