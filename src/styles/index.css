@@ -7,25 +7,25 @@
    ============================================================ */
 
 :root {
-  /* Brand */
-  --brand: #0d8a5f;
-  --brand-600: #0a7350;
-  --brand-400: #22a877;
-  --brand-glow: rgba(13, 138, 95, 0.35);
+  /* Brand — BKETO blue (#105C80) */
+  --brand: #105c80;
+  --brand-600: #0c4867;
+  --brand-400: #2d84ab;
+  --brand-glow: rgba(16, 92, 128, 0.32);
 
   /* Goal accents */
-  --shred: #ef7d3a;
-  --maintain: #0d8a5f;
+  --shred: #e0771f;
+  --maintain: #105c80;
   --bulk: #6b5cf2;
 
   /* Macro colors (protein / fat / carbs / fibre) */
-  --m-protein: #0d8a5f;
-  --m-fat: #f2a33c;
-  --m-carbs: #e2655f;
-  --m-fibre: #6b8f9c;
+  --m-protein: #105c80;
+  --m-fat: #e0912f;
+  --m-carbs: #d1605a;
+  --m-fibre: #6e93a3;
 
   /* Status */
-  --good: #0d8a5f;
+  --good: #1f9d6b;
   --warn: #d98a21;
   --bad: #d64545;
 
@@ -74,7 +74,7 @@
 
     --field-bg: rgba(255, 255, 255, 0.06);
     --field-border: rgba(255, 255, 255, 0.14);
-    --brand-glow: rgba(34, 168, 119, 0.3);
+    --brand-glow: rgba(45, 132, 171, 0.32);
   }
 }
 
@@ -94,7 +94,7 @@
 
   --field-bg: rgba(255, 255, 255, 0.06);
   --field-border: rgba(255, 255, 255, 0.14);
-  --brand-glow: rgba(34, 168, 119, 0.3);
+  --brand-glow: rgba(45, 132, 171, 0.32);
 }
 
 /* ------------------------------ reset ------------------------------ */

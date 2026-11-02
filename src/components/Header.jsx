@@ -41,9 +41,11 @@ export default function Header() {
   const { theme, cycle } = useTheme();
   return (
     <header className="header glass">
-      <img className="logo" src="./logo.png" alt="BKETO" />
+      <span className="brandmark">
+        <img src="./logo.png" alt="BKETO" />
+      </span>
       <div className="title">
-        <b>BKETO Calorie Counter</b>
+        <b>Calorie Counter</b>
         <span>Seminyak · Bali</span>
       </div>
       <div className="spacer" />

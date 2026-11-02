@@ -85,7 +85,12 @@ sub‑folder (e.g. `yoursite.com/calories/`).
 
 **Nginx / Apache**
 - Serve the `dist/` folder as static files. Because it's a single page with no
-  client‑side routing, no rewrite rules are needed.
+  client‑side routing, no rewrite rules are needed. An optional `.htaccess`
+  (HTTPS redirect + caching) ships in `public/` and is included in the build.
+
+**Bluehost / cPanel subdomain** — see **[DEPLOY.md](DEPLOY.md)** for a
+step‑by‑step guide (create the subdomain, upload or `git pull` + build, AutoSSL).
+A helper script, `scripts/deploy.sh`, builds and publishes in one command.
 
 ## Notes
 
