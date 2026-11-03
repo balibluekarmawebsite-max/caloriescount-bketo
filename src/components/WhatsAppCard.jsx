@@ -16,10 +16,37 @@ const TABS = [
   { key: "email", label: "Email" },
 ];
 
+/** Current local time as a datetime-local value (YYYY-MM-DDTHH:MM). */
+function nowLocal() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
+
+/** Friendly date-time for the WhatsApp message, e.g. "Mon 3 Nov, 7:30 PM". */
+function formatWhen(v) {
+  if (!v) return "";
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return v;
+  const date = d.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  const time = d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${date}, ${time}`;
+}
+
 export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
   const [tab, setTab] = useState("reserve");
-  const [guests, setGuests] = useState("");
-  const [when, setWhen] = useState("");
+  const [guests, setGuests] = useState("1");
+  const [when, setWhen] = useState(nowLocal);
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState("");
   const [emailState, setEmailState] = useState("idle"); // idle|sending|sent|error
@@ -70,7 +97,7 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
     label,
     restaurant: BKETO.name,
     guests,
-    when,
+    when: formatWhen(when),
   });
   const reserveUrl = hasMeal ? waUrlTo(BKETO.whatsapp, reservationMsg) : null;
 
@@ -139,15 +166,14 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
               <label htmlFor="res-when">Preferred date &amp; time</label>
               <input
                 id="res-when"
-                type="text"
-                placeholder="e.g. Tonight 7:30 pm"
+                type="datetime-local"
                 value={when}
                 onChange={(e) => setWhen(e.target.value)}
               />
             </div>
           </div>
           <span className="wa-hint" style={{ marginTop: -4 }}>
-            Optional — leave blank and fill it in on WhatsApp.
+            Pre-filled with now — adjust it, or clear to fill in on WhatsApp.
           </span>
           <div className="dest-chip">
             <span className="dot-wa" />

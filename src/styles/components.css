@@ -295,6 +295,16 @@ input[type="tel"],
 input[type="number"] {
   padding-right: 14px;
 }
+input[type="datetime-local"] {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  color: var(--text);
+  color-scheme: light dark;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
 select:focus,
 input:focus {
   outline: none;
