@@ -5,6 +5,7 @@ import GoalSelector from "./components/GoalSelector.jsx";
 import MealBuilder from "./components/MealBuilder.jsx";
 import SummaryPanel from "./components/SummaryPanel.jsx";
 import WhatsAppCard from "./components/WhatsAppCard.jsx";
+import MobileSummaryBar from "./components/MobileSummaryBar.jsx";
 import Footnote from "./components/Footnote.jsx";
 
 const emptySlots = () =>
@@ -102,7 +103,7 @@ export default function App() {
             />
           </div>
 
-          <div className="col-summary stack">
+          <div className="col-summary stack" id="summary">
             <SummaryPanel ids={ids} goalKey={goalKey} />
             <WhatsAppCard
               ids={ids}
@@ -116,6 +117,16 @@ export default function App() {
 
         <Footnote />
       </div>
+
+      <MobileSummaryBar
+        ids={ids}
+        goalKey={goalKey}
+        onOpen={() =>
+          document
+            .getElementById("summary")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" })
+        }
+      />
     </>
   );
 }
