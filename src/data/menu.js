@@ -11,6 +11,14 @@ export const CATEGORIES = {
   topping: "Topping",
 };
 
+// BKETO restaurant contact (reservations go here).
+export const BKETO = {
+  name: "BKETO Bali",
+  // WhatsApp number in international digits only (for wa.me).
+  whatsapp: "6281802152888", // +62 818-0215-2888
+  whatsappDisplay: "+62 818-0215-2888",
+};
+
 export const ITEMS = [
   {"id": "i0", "cat": "base", "name": "Brioche Toast", "por": "2 slices", "price": 25, "p": 7, "f": 8, "c": 38, "fib": 2, "net": 36, "kcal": 248, "tags": ["VG"], "keto": "no"},
   {"id": "i1", "cat": "base", "name": "Sourdough Toast", "por": "2 slices", "price": 25, "p": 10, "f": 2, "c": 50, "fib": 3, "net": 47, "kcal": 252, "tags": ["VG"], "keto": "no"},

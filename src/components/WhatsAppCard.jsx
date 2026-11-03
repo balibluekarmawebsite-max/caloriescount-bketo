@@ -1,73 +1,202 @@
 import { useState } from "react";
-import { normPhone, waUrl, buildSummary } from "../lib/calc.js";
+import { BKETO } from "../data/menu.js";
+import {
+  normPhone,
+  waUrl,
+  waUrlTo,
+  buildSummary,
+  buildReservation,
+  mailtoUrl,
+  validEmail,
+} from "../lib/calc.js";
+
+const TABS = [
+  { key: "reserve", label: "Reserve" },
+  { key: "whatsapp", label: "WhatsApp" },
+  { key: "email", label: "Email" },
+];
 
 export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
+  const [tab, setTab] = useState("reserve");
+  const [email, setEmail] = useState("");
   const [copied, setCopied] = useState("");
   const hasMeal = ids.length > 0;
-  const norm = normPhone(phone);
-  // Only flag an error once the user has typed a real number beyond the
-  // country prefix — a lone "+62" shouldn't look like a mistake.
-  const subscriberDigits = phone.replace(/\D/g, "").replace(/^62/, "");
-  const invalid = norm === null && subscriberDigits.length > 0;
-  const summary = buildSummary({ ids, goalKey, label });
-  const url = hasMeal ? waUrl(phone, summary) : null;
 
-  const copy = async () => {
+  const copy = async (text) => {
     try {
-      await navigator.clipboard.writeText(summary);
-      setCopied("Summary copied to clipboard");
+      await navigator.clipboard.writeText(text);
+      setCopied("Copied to clipboard");
     } catch {
-      setCopied("Press and hold to copy, or select the text");
+      setCopied("Press and hold to copy the text");
     }
     setTimeout(() => setCopied(""), 2600);
   };
 
+  // --- Reserve (to BKETO) ---
+  const reservationMsg = buildReservation({ ids, goalKey, label, restaurant: BKETO.name });
+  const reserveUrl = hasMeal ? waUrlTo(BKETO.whatsapp, reservationMsg) : null;
+
+  // --- WhatsApp a copy (to guest) ---
+  const norm = normPhone(phone);
+  const subscriberDigits = phone.replace(/\D/g, "").replace(/^62/, "");
+  const phoneInvalid = norm === null && subscriberDigits.length > 0;
+  const selfSummary = buildSummary({ ids, goalKey, label });
+  const selfUrl = hasMeal ? waUrl(phone, selfSummary) : null;
+
+  // --- Email a copy ---
+  const emailInvalid = email.length > 0 && !validEmail(email);
+  const mailUrl = hasMeal ? mailtoUrl(email, { ids, goalKey, label }) : null;
+
   return (
     <section className="card glass">
       <div className="card-head">
-        <h2>Send to WhatsApp</h2>
+        <h2>Save or send your order</h2>
         <span className="step">Step 3</span>
       </div>
-      <p className="muted" style={{ marginBottom: 10 }}>
-        WhatsApp opens with your summary ready — just tap send to save it.
-        The number stays on your device.
-      </p>
 
-      <div className="wa-field">
-        <label htmlFor="wa-phone">WhatsApp number</label>
-        <input
-          id="wa-phone"
-          type="tel"
-          inputMode="tel"
-          value={phone}
-          placeholder="+62 812 3456 7890"
-          onChange={(e) => onPhone(e.target.value)}
-        />
-        <span className={`wa-hint${invalid ? " err" : ""}`}>
-          {invalid
-            ? "Hmm, that number looks off. Try 0812…, 812…, or +44 7700 900123."
-            : "Indonesian numbers can start 0 or 812. Add + for other countries."}
-        </span>
+      <div className="seg" role="tablist" aria-label="What to do with your order">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
+            className={`seg-btn${tab === t.key ? " active" : ""}`}
+            onClick={() => {
+              setTab(t.key);
+              setCopied("");
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      <div className="wa-actions">
-        <a
-          className="btn btn-wa"
-          href={url || "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-disabled={!url}
-          onClick={(e) => {
-            if (!url) e.preventDefault();
-          }}
-        >
-          {norm ? `Open WhatsApp to +${norm}` : "Open WhatsApp with my summary"}
-        </a>
-        <button className="btn btn-ghost" onClick={copy} disabled={!hasMeal}>
-          Copy summary instead
-        </button>
-        <div className="copied">{copied}</div>
-      </div>
+      {!hasMeal && (
+        <p className="muted" style={{ marginTop: 14 }}>
+          Add a few items to your meal first, then reserve or save it here.
+        </p>
+      )}
+
+      {/* ---------- Reserve at BKETO ---------- */}
+      {tab === "reserve" && (
+        <div className="tabpane">
+          <p className="muted">
+            Send your order straight to <b>{BKETO.name}</b> on WhatsApp to request a
+            reservation. They’ll reply to confirm.
+          </p>
+          <div className="dest-chip">
+            <span className="dot-wa" />
+            {BKETO.name} · {BKETO.whatsappDisplay}
+          </div>
+          <div className="wa-actions">
+            <a
+              className="btn btn-wa"
+              href={reserveUrl || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-disabled={!reserveUrl}
+              onClick={(e) => {
+                if (!reserveUrl) e.preventDefault();
+              }}
+            >
+              Reserve on WhatsApp
+            </a>
+            <button className="btn btn-ghost" onClick={() => copy(reservationMsg)} disabled={!hasMeal}>
+              Copy reservation text
+            </button>
+            <div className="copied">{copied}</div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- WhatsApp a copy to the guest ---------- */}
+      {tab === "whatsapp" && (
+        <div className="tabpane">
+          <p className="muted">
+            Send the order summary to your own WhatsApp to keep a record. The number
+            stays on your device.
+          </p>
+          <div className="wa-field">
+            <label htmlFor="wa-phone">Your WhatsApp number</label>
+            <input
+              id="wa-phone"
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              placeholder="+62 812 3456 7890"
+              onChange={(e) => onPhone(e.target.value)}
+            />
+            <span className={`wa-hint${phoneInvalid ? " err" : ""}`}>
+              {phoneInvalid
+                ? "That number looks off. Try 0812…, 812…, or +44 7700 900123."
+                : "Indonesian numbers can start 0 or 812. Add + for other countries."}
+            </span>
+          </div>
+          <div className="wa-actions">
+            <a
+              className="btn btn-wa"
+              href={selfUrl || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-disabled={!selfUrl}
+              onClick={(e) => {
+                if (!selfUrl) e.preventDefault();
+              }}
+            >
+              {norm ? `Open WhatsApp to +${norm}` : "Open WhatsApp with my order"}
+            </a>
+            <button className="btn btn-ghost" onClick={() => copy(selfSummary)} disabled={!hasMeal}>
+              Copy order summary
+            </button>
+            <div className="copied">{copied}</div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- Email a copy ---------- */}
+      {tab === "email" && (
+        <div className="tabpane">
+          <p className="muted">
+            Email the order summary to yourself or a guest. Opens your mail app with
+            everything filled in — just hit send.
+          </p>
+          <div className="wa-field">
+            <label htmlFor="order-email">Email address</label>
+            <input
+              id="order-email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={email}
+              placeholder="you@example.com"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <span className={`wa-hint${emailInvalid ? " err" : ""}`}>
+              {emailInvalid ? "That email doesn’t look right." : "We never store it — it just opens your mail app."}
+            </span>
+          </div>
+          <div className="wa-actions">
+            <a
+              className="btn btn-primary"
+              href={mailUrl || "#"}
+              aria-disabled={!mailUrl}
+              onClick={(e) => {
+                if (!mailUrl) e.preventDefault();
+              }}
+            >
+              Email my order
+            </a>
+            <button
+              className="btn btn-ghost"
+              onClick={() => copy(buildSummary({ ids, goalKey, label }).replace(/\*/g, ""))}
+              disabled={!hasMeal}
+            >
+              Copy order summary
+            </button>
+            <div className="copied">{copied}</div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

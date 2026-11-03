@@ -100,4 +100,38 @@ export function waUrl(phone, text) {
   return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
 }
 
+/** wa.me link to a fixed international number (digits only). */
+export function waUrlTo(digits, text) {
+  if (!digits) return null;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
+
+/** A reservation message addressed to the BKETO restaurant. */
+export function buildReservation({ ids, goalKey, label, restaurant }) {
+  const body = buildSummary({ ids, goalKey, label });
+  const name = restaurant || "BKETO";
+  return (
+    `Hi ${name} 👋\n` +
+    `I'd like to order the following${label ? ` (${label})` : ""} and reserve:\n\n` +
+    body +
+    `\n\nCould you please confirm my reservation? Thank you! 🙏`
+  );
+}
+
+/** Simple email validity check. */
+export function validEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || "").trim());
+}
+
+/** mailto: link carrying the order summary, or null when the email is invalid. */
+export function mailtoUrl(email, { ids, goalKey, label }) {
+  if (!validEmail(email)) return null;
+  const subject = `My BKETO order${label ? ` — ${label}` : ""}`;
+  // Plain text reads better in email without the WhatsApp markdown asterisks.
+  const body = buildSummary({ ids, goalKey, label }).replace(/\*/g, "");
+  return `mailto:${encodeURIComponent(email.trim())}?subject=${encodeURIComponent(
+    subject
+  )}&body=${encodeURIComponent(body)}`;
+}
+
 export const fmt = (n) => (Number.isFinite(n) ? n.toLocaleString("en-US") : "0");
