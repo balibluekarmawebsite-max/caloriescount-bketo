@@ -145,6 +145,31 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
     }
   };
 
+  // Fire-and-forget: save the guest's contact + order so BKETO can pull it later.
+  const captureLead = (channel, extra = {}) => {
+    if (!hasMeal) return;
+    try {
+      const order = buildOrderPayload({ ids, goalKey, label });
+      const payload = {
+        channel,
+        phone: extra.phone || "",
+        email: extra.email || "",
+        guests: extra.guests ?? "",
+        date: extra.date || "",
+        time: extra.time || "",
+        order,
+      };
+      fetch(new URL("api/save-lead.php", window.location.href).toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {
+      /* best effort — never block the user */
+    }
+  };
+
   // --- Reserve (to BKETO) ---
   const reservationMsg = buildReservation({
     ids,
@@ -260,7 +285,15 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
               rel="noopener noreferrer"
               aria-disabled={!reserveUrl}
               onClick={(e) => {
-                if (!reserveUrl) e.preventDefault();
+                if (!reserveUrl) {
+                  e.preventDefault();
+                  return;
+                }
+                captureLead("reserve", {
+                  guests,
+                  date: formatDateDMY(date),
+                  time: to12h(time),
+                });
               }}
             >
               Reserve on WhatsApp
@@ -277,8 +310,8 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
       {tab === "whatsapp" && (
         <div className="tabpane">
           <p className="muted">
-            Send the order summary to your own WhatsApp to keep a record. The number
-            stays on your device.
+            Send the order summary to your own WhatsApp to keep a record. BKETO keeps
+            your details to help with your booking.
           </p>
           <div className="wa-field">
             <label htmlFor="wa-phone">Your WhatsApp number</label>
@@ -304,7 +337,11 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
               rel="noopener noreferrer"
               aria-disabled={!selfUrl}
               onClick={(e) => {
-                if (!selfUrl) e.preventDefault();
+                if (!selfUrl) {
+                  e.preventDefault();
+                  return;
+                }
+                captureLead("whatsapp", { phone: norm || "" });
               }}
             >
               {norm ? `Open WhatsApp to +${norm}` : "Open WhatsApp with my order"}

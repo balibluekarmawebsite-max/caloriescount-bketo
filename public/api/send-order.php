@@ -8,6 +8,8 @@
  * server is authoritative for bluekarmasecrets.com.
  */
 
+require_once __DIR__ . '/lib-leads.php';
+
 // ---- Config ----
 const BKETO_FROM      = 'info@bluekarmasecrets.com';
 const BKETO_FROM_NAME = 'BKETO Bali';
@@ -396,6 +398,10 @@ function bk_main() {
 
     $sent = @mail($to, $encSubject, $body, $headers, '-f ' . BKETO_FROM);
     if (!$sent) bk_fail(500, 'Could not send the email right now');
+
+    if ($order !== null) {
+        @bk_store_lead(bk_flatten_lead('email', $to, '', $order['reservation'] ?? [], $order));
+    }
 
     echo json_encode(['ok' => true]);
 }
