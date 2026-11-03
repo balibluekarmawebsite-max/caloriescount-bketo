@@ -279,7 +279,8 @@
 }
 select,
 input[type="text"],
-input[type="tel"] {
+input[type="tel"],
+input[type="number"] {
   width: 100%;
   padding: 12px 38px 12px 14px;
   border-radius: var(--radius-xs);
@@ -290,7 +291,8 @@ input[type="tel"] {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 input[type="text"],
-input[type="tel"] {
+input[type="tel"],
+input[type="number"] {
   padding-right: 14px;
 }
 select:focus,
@@ -687,6 +689,18 @@ option {
   background: #25d366;
   box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.22);
   flex: none;
+}
+
+/* reservation guest/time fields */
+.res-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 420px) {
+  .res-fields {
+    grid-template-columns: 1fr;
+  }
 }
 .copied {
   font-size: 0.8rem;

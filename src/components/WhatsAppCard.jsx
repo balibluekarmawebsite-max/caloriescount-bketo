@@ -18,6 +18,8 @@ const TABS = [
 
 export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
   const [tab, setTab] = useState("reserve");
+  const [guests, setGuests] = useState("");
+  const [when, setWhen] = useState("");
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState("");
   const [emailState, setEmailState] = useState("idle"); // idle|sending|sent|error
@@ -62,7 +64,14 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
   };
 
   // --- Reserve (to BKETO) ---
-  const reservationMsg = buildReservation({ ids, goalKey, label, restaurant: BKETO.name });
+  const reservationMsg = buildReservation({
+    ids,
+    goalKey,
+    label,
+    restaurant: BKETO.name,
+    guests,
+    when,
+  });
   const reserveUrl = hasMeal ? waUrlTo(BKETO.whatsapp, reservationMsg) : null;
 
   // --- WhatsApp a copy (to guest) ---
@@ -113,6 +122,33 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
             Send your order straight to <b>{BKETO.name}</b> on WhatsApp to request a
             reservation. They’ll reply to confirm.
           </p>
+          <div className="res-fields">
+            <div className="wa-field">
+              <label htmlFor="res-guests">Guests</label>
+              <input
+                id="res-guests"
+                type="number"
+                min="1"
+                inputMode="numeric"
+                placeholder="e.g. 2"
+                value={guests}
+                onChange={(e) => setGuests(e.target.value)}
+              />
+            </div>
+            <div className="wa-field">
+              <label htmlFor="res-when">Preferred date &amp; time</label>
+              <input
+                id="res-when"
+                type="text"
+                placeholder="e.g. Tonight 7:30 pm"
+                value={when}
+                onChange={(e) => setWhen(e.target.value)}
+              />
+            </div>
+          </div>
+          <span className="wa-hint" style={{ marginTop: -4 }}>
+            Optional — leave blank and fill it in on WhatsApp.
+          </span>
           <div className="dest-chip">
             <span className="dot-wa" />
             {BKETO.name} · {BKETO.whatsappDisplay}
