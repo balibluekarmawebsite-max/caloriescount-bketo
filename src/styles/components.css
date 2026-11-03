@@ -295,9 +295,11 @@ input[type="tel"],
 input[type="number"] {
   padding-right: 14px;
 }
-input[type="datetime-local"] {
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
   width: 100%;
-  padding: 11px 14px;
+  padding: 11px 12px;
   border-radius: var(--radius-xs);
   border: 1px solid var(--field-border);
   background: var(--field-bg);
@@ -701,15 +703,18 @@ option {
   flex: none;
 }
 
-/* reservation guest/time fields */
+/* reservation guest/date/time fields */
 .res-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 90px minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
 }
-@media (max-width: 420px) {
+@media (max-width: 480px) {
   .res-fields {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+  }
+  .res-fields > .wa-field:first-child {
+    grid-column: 1 / -1;
   }
 }
 .copied {

@@ -16,37 +16,48 @@ const TABS = [
   { key: "email", label: "Email" },
 ];
 
-/** Current local time as a datetime-local value (YYYY-MM-DDTHH:MM). */
-function nowLocal() {
+const pad2 = (n) => String(n).padStart(2, "0");
+
+/** Today as a date-input value (YYYY-MM-DD). */
+function todayDate() {
   const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-/** Friendly date-time for the WhatsApp message, e.g. "Mon 3 Nov, 7:30 PM". */
-function formatWhen(v) {
-  if (!v) return "";
-  const d = new Date(v);
-  if (isNaN(d.getTime())) return v;
-  const date = d.toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-  const time = d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-  return `${date}, ${time}`;
+/** Now as a time-input value (HH:MM). */
+function nowTime() {
+  const d = new Date();
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/** Friendly date + time for the WhatsApp message, e.g. "Mon 3 Nov, 7:30 PM". */
+function formatWhen(date, time) {
+  if (!date && !time) return "";
+  if (date) {
+    const dt = new Date(`${date}T${time || "00:00"}`);
+    if (!isNaN(dt.getTime())) {
+      const dstr = dt.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      });
+      if (!time) return dstr;
+      const tstr = dt.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      return `${dstr}, ${tstr}`;
+    }
+  }
+  return [date, time].filter(Boolean).join(" ");
 }
 
 export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
   const [tab, setTab] = useState("reserve");
   const [guests, setGuests] = useState("1");
-  const [when, setWhen] = useState(nowLocal);
+  const [date, setDate] = useState(todayDate);
+  const [time, setTime] = useState(nowTime);
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState("");
   const [emailState, setEmailState] = useState("idle"); // idle|sending|sent|error
@@ -97,7 +108,7 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
     label,
     restaurant: BKETO.name,
     guests,
-    when: formatWhen(when),
+    when: formatWhen(date, time),
   });
   const reserveUrl = hasMeal ? waUrlTo(BKETO.whatsapp, reservationMsg) : null;
 
@@ -163,17 +174,26 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
               />
             </div>
             <div className="wa-field">
-              <label htmlFor="res-when">Preferred date &amp; time</label>
+              <label htmlFor="res-date">Date</label>
               <input
-                id="res-when"
-                type="datetime-local"
-                value={when}
-                onChange={(e) => setWhen(e.target.value)}
+                id="res-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+            <div className="wa-field">
+              <label htmlFor="res-time">Time</label>
+              <input
+                id="res-time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
               />
             </div>
           </div>
           <span className="wa-hint" style={{ marginTop: -4 }}>
-            Pre-filled with now — adjust it, or clear to fill in on WhatsApp.
+            Pre-filled with now — tap to change the date or time.
           </span>
           <div className="dest-chip">
             <span className="dot-wa" />
