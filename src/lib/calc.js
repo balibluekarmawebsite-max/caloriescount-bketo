@@ -132,11 +132,12 @@ export function waUrlTo(digits, text) {
 }
 
 /** A reservation message addressed to the BKETO restaurant. */
-export function buildReservation({ ids, goalKey, label, restaurant, guests, when }) {
+export function buildReservation({ ids, goalKey, label, restaurant, guests, dateText, timeText }) {
   const { dish, goalLine } = dishAndGoal(goalKey, label);
   const name = restaurant || "BKETO Bali";
   const g = (guests && String(guests).trim()) || "__";
-  const w = (when && String(when).trim()) || "__";
+  const dt = (dateText && String(dateText).trim()) || "__";
+  const tm = (timeText && String(timeText).trim()) || "__";
   return [
     `👋 Hi ${name}! I'd like to order and reserve a table.`,
     "",
@@ -148,7 +149,9 @@ export function buildReservation({ ids, goalKey, label, restaurant, guests, when
     nutritionBlock(ids, goalKey),
     "",
     "🗓️ *Reservation*",
-    `Guests: ${g} · Preferred time: ${w}`,
+    `Guests: ${g}`,
+    `Date: ${dt}`,
+    `Time: ${tm}`,
     "",
     "🙏 Could you please confirm my reservation? Thank you!",
   ].join("\n");

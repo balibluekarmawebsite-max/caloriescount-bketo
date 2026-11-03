@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BKETO } from "../data/menu.js";
+import Select from "./Select.jsx";
 import {
   normPhone,
   waUrl,
@@ -18,46 +19,85 @@ const TABS = [
 
 const pad2 = (n) => String(n).padStart(2, "0");
 
-/** Today as a date-input value (YYYY-MM-DD). */
-function todayDate() {
-  const d = new Date();
+// Reservation service hours & rules.
+const SERVICE = { startMin: 11 * 60, endMin: 22 * 60, step: 30, bufferMin: 30 };
+const BOOK_AHEAD_DAYS = 60;
+
+function dateStr(d) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
-
-/** Now as a time-input value (HH:MM). */
-function nowTime() {
-  const d = new Date();
-  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+function todayDate() {
+  return dateStr(new Date());
 }
-
-/** Friendly date + time for the WhatsApp message, e.g. "Mon 3 Nov, 7:30 PM". */
-function formatWhen(date, time) {
-  if (!date && !time) return "";
-  if (date) {
-    const dt = new Date(`${date}T${time || "00:00"}`);
-    if (!isNaN(dt.getTime())) {
-      const dstr = dt.toLocaleDateString("en-GB", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      });
-      if (!time) return dstr;
-      const tstr = dt.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-      return `${dstr}, ${tstr}`;
-    }
+function maxDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + BOOK_AHEAD_DAYS);
+  return dateStr(d);
+}
+function allSlots() {
+  const out = [];
+  for (let m = SERVICE.startMin; m <= SERVICE.endMin; m += SERVICE.step) {
+    out.push(`${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`);
   }
-  return [date, time].filter(Boolean).join(" ");
+  return out;
+}
+/** 24h "HH:MM" -> "7:30 PM". */
+function to12h(hm) {
+  if (!hm) return "";
+  const [h, m] = hm.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+/** Slots for a date; today hides already-passed slots (+ buffer). */
+function slotsForDate(ds) {
+  const slots = allSlots();
+  if (ds !== todayDate()) return slots;
+  const now = new Date();
+  const cutoff = now.getHours() * 60 + now.getMinutes() + SERVICE.bufferMin;
+  return slots.filter((hm) => {
+    const [h, m] = hm.split(":").map(Number);
+    return h * 60 + m >= cutoff;
+  });
+}
+/** Unambiguous "Fri, 05/11/2026". */
+function formatDateDMY(ds) {
+  if (!ds) return "";
+  const d = new Date(`${ds}T00:00`);
+  if (isNaN(d.getTime())) return ds;
+  return d.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+/** Default date + first available slot (rolls to tomorrow once today is done). */
+function defaultDateTime() {
+  const today = todayDate();
+  const todaySlots = slotsForDate(today);
+  if (todaySlots.length) return { date: today, time: todaySlots[0] };
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return { date: dateStr(d), time: allSlots()[0] };
 }
 
 export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
   const [tab, setTab] = useState("reserve");
   const [guests, setGuests] = useState("1");
-  const [date, setDate] = useState(todayDate);
-  const [time, setTime] = useState(nowTime);
+  const [date, setDate] = useState(() => defaultDateTime().date);
+  const [time, setTime] = useState(() => defaultDateTime().time);
+
+  // Keep the chosen slot valid when the date changes (e.g. today's slots pass).
+  useEffect(() => {
+    const avail = slotsForDate(date);
+    setTime((cur) => (avail.includes(cur) ? cur : avail[0] || ""));
+  }, [date]);
+
+  const availSlots = slotsForDate(date);
+  const timeGroups = [
+    { label: "", options: availSlots.map((hm) => ({ value: hm, label: to12h(hm) })) },
+  ];
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState("");
   const [emailState, setEmailState] = useState("idle"); // idle|sending|sent|error
@@ -79,13 +119,16 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
     setEmailState("sending");
     try {
       const endpoint = new URL("api/send-order.php", window.location.href).toString();
+      const order = buildOrderPayload({ ids, goalKey, label });
+      order.reservation = {
+        guests: String(guests || "").trim(),
+        date: formatDateDMY(date),
+        time: to12h(time),
+      };
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: email.trim(),
-          order: buildOrderPayload({ ids, goalKey, label }),
-        }),
+        body: JSON.stringify({ to: email.trim(), order }),
       });
       const j = await res.json().catch(() => ({ ok: false }));
       if (res.ok && j.ok) {
@@ -108,7 +151,8 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
     label,
     restaurant: BKETO.name,
     guests,
-    when: formatWhen(date, time),
+    dateText: formatDateDMY(date),
+    timeText: to12h(time),
   });
   const reserveUrl = hasMeal ? waUrlTo(BKETO.whatsapp, reservationMsg) : null;
 
@@ -178,22 +222,30 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
               <input
                 id="res-date"
                 type="date"
+                min={todayDate()}
+                max={maxDate()}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
             <div className="wa-field">
-              <label htmlFor="res-time">Time</label>
-              <input
-                id="res-time"
-                type="time"
+              <label>Time</label>
+              <Select
                 value={time}
-                onChange={(e) => setTime(e.target.value)}
+                onChange={setTime}
+                groups={timeGroups}
+                placeholder={availSlots.length ? "Pick a time" : "No times left"}
+                clearable={false}
+                searchable={false}
+                ariaLabel="Preferred time"
+                title="Choose a time"
               />
             </div>
           </div>
           <span className="wa-hint" style={{ marginTop: -4 }}>
-            Pre-filled with now — tap to change the date or time.
+            {availSlots.length
+              ? "Pre-filled with now — tap to change the date or time."
+              : "No slots left today — pick another date."}
           </span>
           <div className="dest-chip">
             <span className="dot-wa" />

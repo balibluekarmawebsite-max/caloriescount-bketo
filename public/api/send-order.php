@@ -90,6 +90,21 @@ function bk_render_html(array $o) {
             bk_esc($o['status']['text']) . '</span></div>';
     }
 
+    // Reservation card (optional)
+    $resv = '';
+    if (!empty($o['reservation'])) {
+        $r = $o['reservation'];
+        $g = $r['guests'] !== '' ? bk_esc($r['guests']) : '—';
+        $dd = $r['date'] !== '' ? bk_esc($r['date']) : '—';
+        $tt = $r['time'] !== '' ? bk_esc($r['time']) : '—';
+        $resv =
+            '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;"><tr>' .
+            '<td class="nutri" style="background:#f5f8f7;border-radius:12px;padding:12px 14px;">' .
+            '<div class="soft" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8a988f;">Reservation request</div>' .
+            '<div class="ink" style="font-size:14px;color:#1c2b25;margin-top:4px;">👥 ' . $g . ' &nbsp;·&nbsp; 📅 ' . $dd . ' &nbsp;·&nbsp; 🕐 ' . $tt . '</div>' .
+            '</td></tr></table>';
+    }
+
     $total = bk_esc($o['totals']['kcal']);
     $preheader = 'Your BKETO order — ' . $total . ' kcal';
 
@@ -141,6 +156,7 @@ function bk_render_html(array $o) {
       <h1 class="ink" style="margin:6px 0 2px;font-size:24px;line-height:1.2;color:#15241e;font-weight:bold;">{$dish}</h1>
       <div class="soft" style="font-size:14px;color:#6a7b73;">{$goalLine}</div>
       {$pill}
+      {$resv}
     </td></tr>
 
     <!-- Ingredients -->
@@ -199,6 +215,12 @@ function bk_render_text(array $o) {
     $lines[] = 'Protein ' . $o['totals']['p'] . ' g · Fat ' . $o['totals']['f'] . ' g · Net carbs ' . $o['totals']['net'] . ' g · Fibre ' . $o['totals']['fib'] . ' g';
     $lines[] = 'Calories from protein ' . $o['split']['protein'] . '% · fat ' . $o['split']['fat'] . '% · carbs ' . $o['split']['carbs'] . '%';
     if (!empty($o['status'])) $lines[] = 'Status: ' . $o['status']['text'];
+    if (!empty($o['reservation'])) {
+        $r = $o['reservation'];
+        $lines[] = '';
+        $lines[] = 'Reservation: ' . ($r['guests'] !== '' ? $r['guests'] : '—') . ' guest(s) · ' .
+            ($r['date'] !== '' ? $r['date'] : '—') . ' · ' . ($r['time'] !== '' ? $r['time'] : '—');
+    }
     $lines[] = '';
     $lines[] = 'Estimates per menu portion.';
     $lines[] = '— BKETO Bali, Seminyak, Bali';
@@ -251,6 +273,17 @@ function bk_parse_order($data) {
                 'text' => substr(preg_replace('/[\r\n]+/', ' ', (string)($in['status']['text'] ?? '')), 0, 60),
                 'cls'  => $cls,
             ];
+        }
+    }
+
+    $clean['reservation'] = null;
+    if (isset($in['reservation']) && is_array($in['reservation'])) {
+        $r = $in['reservation'];
+        $g  = substr(preg_replace('/[\r\n]+/', ' ', (string)($r['guests'] ?? '')), 0, 12);
+        $dd = substr(preg_replace('/[\r\n]+/', ' ', (string)($r['date'] ?? '')), 0, 40);
+        $tt = substr(preg_replace('/[\r\n]+/', ' ', (string)($r['time'] ?? '')), 0, 20);
+        if ($g !== '' || $dd !== '' || $tt !== '') {
+            $clean['reservation'] = ['guests' => $g, 'date' => $dd, 'time' => $tt];
         }
     }
     return $clean;
