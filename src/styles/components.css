@@ -699,6 +699,116 @@ option {
   color: var(--bad);
 }
 
+/* glassy input with leading icon (email field) */
+.input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 14px;
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  border-radius: var(--radius-xs);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input-wrap:focus-within {
+  border-color: var(--brand-400);
+  box-shadow: 0 0 0 3px var(--brand-glow);
+}
+.input-wrap.err {
+  border-color: var(--bad);
+}
+.input-wrap > svg {
+  color: var(--text-faint);
+  flex: none;
+}
+.input-wrap input[type="email"] {
+  border: none;
+  background: transparent;
+  padding: 12px 0;
+  width: 100%;
+  color: var(--text);
+}
+.input-wrap input[type="email"]:focus {
+  outline: none;
+}
+
+/* animated email-send button */
+.email-send {
+  position: relative;
+  overflow: hidden;
+  transition: background 0.35s ease, box-shadow 0.35s ease, opacity 0.2s;
+}
+.email-send .es-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+.email-send.is-sent {
+  background: linear-gradient(135deg, #2bd56c, #12a74e);
+  box-shadow: 0 10px 24px -10px rgba(18, 167, 78, 0.6);
+  opacity: 1;
+  animation: es-pop 0.4s ease;
+}
+.email-send.is-sent::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 32%, rgba(255, 255, 255, 0.4) 50%, transparent 68%);
+  transform: translateX(-120%);
+  animation: es-sweep 0.75s 0.08s ease;
+}
+.email-send.is-error {
+  background: linear-gradient(135deg, #e2655f, #c0443e);
+  animation: es-shake 0.4s ease;
+}
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.check-anim circle {
+  stroke-dasharray: 64;
+  stroke-dashoffset: 64;
+  animation: es-draw 0.45s ease forwards;
+}
+.check-anim path {
+  stroke-dasharray: 26;
+  stroke-dashoffset: 26;
+  animation: es-draw 0.35s 0.26s ease forwards;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes es-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes es-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+@keyframes es-sweep {
+  to { transform: translateX(120%); }
+}
+@keyframes es-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .email-send.is-sent,
+  .email-send.is-error { animation: none; }
+  .email-send.is-sent::after { display: none; }
+  .check-anim circle,
+  .check-anim path { animation: none; stroke-dashoffset: 0; }
+  .spinner { animation-duration: 1.4s; }
+}
+
 /* ----------------------------- footnote ----------------------------- */
 .foot {
   margin-top: 22px;
