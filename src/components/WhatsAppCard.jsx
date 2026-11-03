@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { BKETO } from "../data/menu.js";
 import Select from "./Select.jsx";
+import DatePicker from "./DatePicker.jsx";
 import {
   normPhone,
   waUrl,
@@ -218,14 +219,14 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
               />
             </div>
             <div className="wa-field">
-              <label htmlFor="res-date">Date</label>
-              <input
-                id="res-date"
-                type="date"
+              <label>Date</label>
+              <DatePicker
+                value={date}
+                onChange={setDate}
                 min={todayDate()}
                 max={maxDate()}
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                ariaLabel="Reservation date"
+                title="Choose a date"
               />
             </div>
             <div className="wa-field">
