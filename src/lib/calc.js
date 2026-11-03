@@ -65,32 +65,57 @@ export function normPhone(raw) {
   return d.length >= 8 && d.length <= 13 ? "62" + d : null;
 }
 
-/** Build the plain-text WhatsApp summary. */
-export function buildSummary({ ids, goalKey, label }) {
-  const t = totals(ids);
-  const G = GOALS[goalKey];
-  const f = fit(t, goalKey);
-  const split = pctSplit(t);
-  const lines = ids
+// Status marker emoji for WhatsApp (minimal, by goal fit).
+const STATUS_EMOJI = { good: "✅", warn: "⚠️", bad: "⚠️" };
+
+/** Ingredient bullet lines for WhatsApp. */
+function ingredientLines(ids) {
+  return ids
     .map((id) => {
       const i = ITEMS_BY_ID[id];
       if (!i) return null;
-      return `• ${i.name}${i.por ? " (" + i.por + ")" : ""}: ${i.kcal} kcal`;
+      const por = i.por ? ` (${i.por})` : "";
+      return `• ${i.name}${por} — ${i.kcal} kcal`;
     })
     .filter(Boolean)
     .join("\n");
+}
 
-  return (
-    `*BKETO calorie count*\n` +
-    `${label || "My meal"}\n` +
-    `Goal: ${goalKey} (${G.short})\n\n` +
-    `${lines}\n\n` +
-    `*Total: ${t.kcal} kcal*\n` +
-    `Protein ${t.p} g · Fat ${t.f} g · Net carbs ${t.net} g · Fibre ${t.fib} g\n` +
-    `Calories from protein ${split.protein}% · fat ${split.fat}% · carbs ${split.carbs}%\n` +
-    `${f ? "Status: " + f.text + "\n" : ""}` +
-    `\nEstimates per menu portion.`
-  );
+/** Nutrition summary block for WhatsApp. */
+function nutritionBlock(ids, goalKey) {
+  const t = totals(ids);
+  const f = fit(t, goalKey);
+  const split = pctSplit(t);
+  const out = [
+    "📊 *Nutrition summary*",
+    `*Total: ${t.kcal} kcal*`,
+    `Protein ${t.p} g · Fat ${t.f} g · Net carbs ${t.net} g · Fibre ${t.fib} g`,
+    `Calories from protein ${split.protein}% · fat ${split.fat}% · carbs ${split.carbs}%`,
+  ];
+  if (f) out.push(`${STATUS_EMOJI[f.cls] || ""} ${f.text}`.trim());
+  return out.join("\n");
+}
+
+function dishAndGoal(goalKey, label) {
+  const G = GOALS[goalKey];
+  const dish = label && label.trim() ? label.trim() : "My BKETO meal";
+  const goalLine = `${goalKey}${G ? ` · ${G.short}` : ""}`;
+  return { dish, goalLine };
+}
+
+/** Clean, scannable WhatsApp order summary (the guest's own copy). */
+export function buildSummary({ ids, goalKey, label }) {
+  const { dish, goalLine } = dishAndGoal(goalKey, label);
+  return [
+    `🧾 *${dish}*`,
+    goalLine,
+    "",
+    ingredientLines(ids),
+    "",
+    nutritionBlock(ids, goalKey),
+    "",
+    "_Estimates per menu portion · BKETO Bali, Seminyak_",
+  ].join("\n");
 }
 
 /** wa.me deep link, or null when the number is invalid / empty. */
@@ -108,14 +133,20 @@ export function waUrlTo(digits, text) {
 
 /** A reservation message addressed to the BKETO restaurant. */
 export function buildReservation({ ids, goalKey, label, restaurant }) {
-  const body = buildSummary({ ids, goalKey, label });
-  const name = restaurant || "BKETO";
-  return (
-    `Hi ${name} 👋\n` +
-    `I'd like to order the following${label ? ` (${label})` : ""} and reserve:\n\n` +
-    body +
-    `\n\nCould you please confirm my reservation? Thank you! 🙏`
-  );
+  const { dish, goalLine } = dishAndGoal(goalKey, label);
+  const name = restaurant || "BKETO Bali";
+  return [
+    `👋 Hi ${name}! I'd like to order and reserve a table.`,
+    "",
+    `🍽️ *${dish}*`,
+    goalLine,
+    "",
+    ingredientLines(ids),
+    "",
+    nutritionBlock(ids, goalKey),
+    "",
+    "🙏 Could you please confirm my reservation? Thank you!",
+  ].join("\n");
 }
 
 /** Simple email validity check. */
