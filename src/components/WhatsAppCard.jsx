@@ -6,6 +6,7 @@ import {
   waUrlTo,
   buildSummary,
   buildReservation,
+  buildOrderPayload,
   validEmail,
 } from "../lib/calc.js";
 
@@ -43,8 +44,7 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: email.trim(),
-          label,
-          summary: buildSummary({ ids, goalKey, label }).replace(/\*/g, ""),
+          order: buildOrderPayload({ ids, goalKey, label }),
         }),
       });
       const j = await res.json().catch(() => ({ ok: false }));

@@ -123,6 +123,29 @@ export function validEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || "").trim());
 }
 
+/** Structured order data for the HTML email template. */
+export function buildOrderPayload({ ids, goalKey, label }) {
+  const t = totals(ids);
+  const G = GOALS[goalKey];
+  const f = fit(t, goalKey);
+  const split = pctSplit(t);
+  const items = ids
+    .map((id) => {
+      const i = ITEMS_BY_ID[id];
+      return i ? { name: i.name, por: i.por || "", kcal: i.kcal } : null;
+    })
+    .filter(Boolean);
+  return {
+    label: label || "",
+    goal: goalKey,
+    goalShort: G ? G.short : "",
+    items,
+    totals: { kcal: t.kcal, p: t.p, f: t.f, net: t.net, fib: t.fib },
+    split: { protein: split.protein, fat: split.fat, carbs: split.carbs },
+    status: f ? { text: f.text, cls: f.cls } : null,
+  };
+}
+
 /** mailto: link carrying the order summary, or null when the email is invalid. */
 export function mailtoUrl(email, { ids, goalKey, label }) {
   if (!validEmail(email)) return null;
