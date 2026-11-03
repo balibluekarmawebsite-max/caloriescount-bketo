@@ -4,6 +4,8 @@
 # ---- Force HTTPS ----
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # Never redirect ACME / SSL-validation requests (keeps AutoSSL working).
+  RewriteCond %{REQUEST_URI} !^/\.well-known/
   RewriteCond %{HTTPS} !=on
   RewriteCond %{HTTP:X-Forwarded-Proto} !https
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

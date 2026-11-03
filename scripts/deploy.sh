@@ -43,11 +43,16 @@ npm run build
 
 echo "==> Publishing dist/ -> $DOCROOT"
 mkdir -p "$DOCROOT"
+# Keep cPanel/SSL scaffolding that lives in the document root.
+KEEP=( ".well-known" "cgi-bin" )
 if command -v rsync >/dev/null 2>&1; then
-  rsync -a --delete dist/ "$DOCROOT/"
+  EXC=()
+  for k in "${KEEP[@]}"; do EXC+=( "--exclude=$k" ); done
+  rsync -a --delete "${EXC[@]}" dist/ "$DOCROOT/"
 else
-  # rsync not available: clear and copy (keeps dotfiles like .htaccess)
-  find "$DOCROOT" -mindepth 1 -delete
+  # rsync not available: remove old files but preserve the KEEP entries, then copy.
+  find "$DOCROOT" -mindepth 1 -maxdepth 1 \
+    ! -name ".well-known" ! -name "cgi-bin" -exec rm -rf {} +
   cp -a dist/. "$DOCROOT/"
 fi
 
