@@ -6,7 +6,6 @@ import {
   waUrlTo,
   buildSummary,
   buildReservation,
-  mailtoUrl,
   validEmail,
 } from "../lib/calc.js";
 
@@ -20,6 +19,8 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
   const [tab, setTab] = useState("reserve");
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState("");
+  const [emailState, setEmailState] = useState("idle"); // idle|sending|sent|error
+  const [emailErr, setEmailErr] = useState("");
   const hasMeal = ids.length > 0;
 
   const copy = async (text) => {
@@ -30,6 +31,32 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
       setCopied("Press and hold to copy the text");
     }
     setTimeout(() => setCopied(""), 2600);
+  };
+
+  const sendEmail = async () => {
+    if (!hasMeal || !validEmail(email)) return;
+    setEmailState("sending");
+    try {
+      const endpoint = new URL("api/send-order.php", window.location.href).toString();
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: email.trim(),
+          label,
+          summary: buildSummary({ ids, goalKey, label }).replace(/\*/g, ""),
+        }),
+      });
+      const j = await res.json().catch(() => ({ ok: false }));
+      if (res.ok && j.ok) setEmailState("sent");
+      else {
+        setEmailState("error");
+        setEmailErr(j.error || "Could not send");
+      }
+    } catch {
+      setEmailState("error");
+      setEmailErr("Network error — please try again");
+    }
   };
 
   // --- Reserve (to BKETO) ---
@@ -45,7 +72,7 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
 
   // --- Email a copy ---
   const emailInvalid = email.length > 0 && !validEmail(email);
-  const mailUrl = hasMeal ? mailtoUrl(email, { ids, goalKey, label }) : null;
+  const canEmail = hasMeal && validEmail(email) && emailState !== "sending";
 
   return (
     <section className="card glass">
@@ -169,23 +196,21 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
               autoComplete="email"
               value={email}
               placeholder="you@example.com"
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailState("idle");
+              }}
             />
             <span className={`wa-hint${emailInvalid ? " err" : ""}`}>
-              {emailInvalid ? "That email doesn’t look right." : "We never store it — it just opens your mail app."}
+              {emailInvalid
+                ? "That email doesn’t look right."
+                : "We send it from BKETO Bali — your order lands in the inbox."}
             </span>
           </div>
           <div className="wa-actions">
-            <a
-              className="btn btn-primary"
-              href={mailUrl || "#"}
-              aria-disabled={!mailUrl}
-              onClick={(e) => {
-                if (!mailUrl) e.preventDefault();
-              }}
-            >
-              Email my order
-            </a>
+            <button className="btn btn-primary" onClick={sendEmail} disabled={!canEmail}>
+              {emailState === "sending" ? "Sending…" : "Email my order"}
+            </button>
             <button
               className="btn btn-ghost"
               onClick={() => copy(buildSummary({ ids, goalKey, label }).replace(/\*/g, ""))}
@@ -193,7 +218,13 @@ export default function WhatsAppCard({ ids, goalKey, label, phone, onPhone }) {
             >
               Copy order summary
             </button>
-            <div className="copied">{copied}</div>
+            <div className={`copied${emailState === "error" ? " err" : ""}`}>
+              {emailState === "sent"
+                ? `Sent to ${email.trim()} ✓`
+                : emailState === "error"
+                ? emailErr || "Could not send"
+                : copied}
+            </div>
           </div>
         </div>
       )}

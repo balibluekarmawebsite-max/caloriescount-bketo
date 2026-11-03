@@ -695,6 +695,9 @@ option {
   text-align: center;
   min-height: 1em;
 }
+.copied.err {
+  color: var(--bad);
+}
 
 /* ----------------------------- footnote ----------------------------- */
 .foot {
